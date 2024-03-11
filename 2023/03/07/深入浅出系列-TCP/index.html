@@ -1,0 +1,694 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="BiggerBrain">
+  <meta name="keywords" content="互联网，计算机，生活">
+  
+    <meta name="description" content="TCP协议TCP（Transmission ControlProtocol）协议是一种面向连接的、可靠的、基于字节流的传输控制协议。它是Internet协议族中最重要的协议之一，用于保证网络传输的可靠性和正确性。TCP协议通过三次握手建立连接、流量控制、拥塞控制、数据传输、序列号管理等机制，为应用层提供了一种可靠的传输服务。TCP协议是一个复杂的协议，但由于其可靠性和广泛的应用场景，成为了互联网传">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入浅出系列-TCP">
+<meta property="og:url" content="http://example.com/2023/03/07/%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA%E7%B3%BB%E5%88%97-TCP/index.html">
+<meta property="og:site_name" content="李世雄的技术博客">
+<meta property="og:description" content="TCP协议TCP（Transmission ControlProtocol）协议是一种面向连接的、可靠的、基于字节流的传输控制协议。它是Internet协议族中最重要的协议之一，用于保证网络传输的可靠性和正确性。TCP协议通过三次握手建立连接、流量控制、拥塞控制、数据传输、序列号管理等机制，为应用层提供了一种可靠的传输服务。TCP协议是一个复杂的协议，但由于其可靠性和广泛的应用场景，成为了互联网传">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/deep.png">
+<meta property="article:published_time" content="2023-03-07T07:08:00.000Z">
+<meta property="article:modified_time" content="2024-03-11T04:09:05.097Z">
+<meta property="article:author" content="李世雄">
+<meta property="article:tag" content="TCP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://example.com/images/deep.png">
+  
+  
+  
+  <title>深入浅出系列-TCP - 李世雄的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.3","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>BiggerBrain</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="深入浅出系列-TCP"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-03-07 15:08" pubdate>
+          2023年3月7日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          25 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">深入浅出系列-TCP</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="TCP协议"><a href="#TCP协议" class="headerlink" title="TCP协议"></a>TCP协议</h1><p>TCP（Transmission Control<br>Protocol）协议是一种面向连接的、可靠的、基于字节流的传输控制协议。它是Internet协议族中最重要的协议之一，用于保证网络传输的可靠性和正确性。TCP协议通过三次握手建立连接、流量控制、拥塞控制、数据传输、序列号管理等机制，为应用层提供了一种可靠的传输服务。TCP协议是一个复杂的协议，但由于其可靠性和广泛的应用场景，成为了互联网传输中不可或缺的一部分。</p>
+<h1 id="TCP的关键机制"><a href="#TCP的关键机制" class="headerlink" title="TCP的关键机制"></a>TCP的关键机制</h1><h2 id="TCP连接"><a href="#TCP连接" class="headerlink" title="TCP连接"></a>TCP连接</h2><p>TCP连接是一种基于TCP协议的网络连接，用于在互联网上进行数据传输。TCP连接是一种面向连接的连接，它提供了可靠的、有序的、全双工的数据传输服务。</p>
+<p>TCP连接的建立需要三次握手过程。客户端首先向服务器发送一个SYN包，表示请求建立连接。服务器收到SYN包后，回复一个SYN&#x2F;ACK包，表示已收到请求，并准备好建立连接。客户端再回复一个ACK包，表示确认建立连接。三次握手完成后，TCP连接成功建立。</p>
+<p>TCP连接的维持需要保持心跳包和窗口控制等机制，以避免TCP连接的超时和丢失。TCP连接的关闭需要四次挥手过程。客户端首先发送一个FIN包，表示要关闭连接，服务器收到后回复一个ACK包，表示已收到请求。服务器在关闭之前也需要发送一个FIN包，表示已准备好关闭连接，客户端收到后回复一个ACK包，表示确认关闭连接。四次挥手完成后，TCP连接成功关闭。</p>
+<p>TCP连接提供了可靠的数据传输，但是也存在一些缺点，例如连接建立时间长、连接维护的开销较高等。因此，在某些场景下，如实时音视频传输等，可能会使用UDP协议进行数据传输，以避免TCP连接的缺点。</p>
+<h2 id="TCP四元组"><a href="#TCP四元组" class="headerlink" title="TCP四元组"></a>TCP四元组</h2><p>TCP四元组是指TCP协议在通信过程中所使用的四个重要参数，它们分别是：</p>
+<ol>
+<li>源IP地址：指发送数据包的主机IP地址。</li>
+<li>源端口号：指发送数据包的应用程序使用的端口号。</li>
+<li>目的IP地址：指接收数据包的主机IP地址。</li>
+<li>目的端口号：指接收数据包的应用程序使用的端口号。</li>
+</ol>
+<p>四个参数共同组成了TCP连接的唯一标识，也是TCP协议进行数据传输所必需的重要参数。在TCP连接建立时，这四个参数被称为“三次握手参数”，在TCP连接中，这四个参数也被称为“TCP连接标识符”。</p>
+<p>在TCP连接中，每个数据包都会包含这四个参数，并且在收到数据包时，TCP协议会根据这四个参数来确定数据包所要发往的应用程序。这四个参数的唯一性保证了TCP连接的正确性和可靠性，同时也为网络管理和安全监控提供了基础。</p>
+<h2 id="序列号管理"><a href="#序列号管理" class="headerlink" title="序列号管理"></a>序列号管理</h2><p>TCP协议的序列号管理主要用于处理数据的可靠传输。在TCP连接建立成功后，每个TCP报文段都会被分配一个序列号。发送方在发送数据时，会将数据分割成若干个数据块，并为每个数据块分配一个序列号。接收方在接收数据时，会根据序列号将数据块按序接收，并通过确认序列号告知发送方已经接收了哪些数据。</p>
+<p>序列号的作用是用于区分不同报文段的数据块，以保证数据的正确性和可靠性。序列号的初始值是随机选择的，可以防止重复数据包的出现。TCP协议还提供了窗口控制机制，用于限制发送方不要一次性发送过多的数据，防止网络拥塞。接收方会向发送方发送一个窗口大小的值，表示可以接收的数据量，如果发送方发送的数据大小超出窗口大小，接收方会拒绝接收，直到窗口大小再次增大。</p>
+<p>通过序列号管理机制，TCP协议可以保证数据的可靠传输，对于丢失、重传等问题都有相应的处理方法，保证了网络传输的正确性和可靠性。</p>
+<h2 id="TCP的滑动窗口"><a href="#TCP的滑动窗口" class="headerlink" title="TCP的滑动窗口"></a>TCP的滑动窗口</h2><p>TCP的滑动窗口是一种流量控制机制，用于限制发送方发送数据的速率，以防止网络拥塞和数据丢失。滑动窗口的大小表示接收端可以接收的数据量大小，发送端需要根据接收端的窗口大小来决定发送的数据量。</p>
+<p>滑动窗口的原理是，接收端会向发送端发送一个窗口大小的值（例如，32KB），表示可以接收的数据大小。发送端会根据窗口大小来发送数据，当发送的数据被接收端确认接收后，窗口会向前滑动，表示接收端又可以接收新的数据。如果窗口大小为0，表示接收端暂时无法接收数据。</p>
+<p>在TCP连接建立时，发送端和接收端会协商窗口大小的初始值，并在传输数据过程中动态调整窗口大小，以适应网络拥塞情况和接收端的接收能力。当网络拥塞时，接收端可以通过减小窗口大小来限制发送端的发送速率，以避免网络拥塞。当网络畅通时，接收端可以通过增大窗口大小来提高传输效率。</p>
+<p>滑动窗口机制可以保证TCP传输的可靠性和流量控制，同时还能够提高传输效率，是TCP协议中的重要机制之一。</p>
+<h2 id="TCP的拥塞窗口"><a href="#TCP的拥塞窗口" class="headerlink" title="TCP的拥塞窗口"></a>TCP的拥塞窗口</h2><p>TCP的拥塞窗口是一种拥塞控制机制，用于避免网络拥塞和网络阻塞问题。拥塞窗口的大小表示发送方可以发送数据的最大量。当网络出现拥塞或拥塞风险时，发送方需要适当减小拥塞窗口的大小，以避免过多的数据流入网络，导致网络拥塞或阻塞。</p>
+<p>TCP的拥塞窗口是通过拥塞控制算法来实现的。TCP的拥塞控制算法主要有四种，包括慢启动、拥塞避免、快速重传和快速恢复。其中，慢启动算法是TCP拥塞控制算法的核心。它会在TCP连接建立时，以指数级别的方式逐渐增加拥塞窗口的大小，直到出现拥塞或达到最大窗口值，然后根据拥塞情况适当调整拥塞窗口的大小。</p>
+<p>拥塞避免算法则是在拥塞窗口达到一定阈值后，将拥塞窗口的增长率降低，以避免过多数据流入网络，导致网络拥塞。快速重传和快速恢复算法是用于应对数据包丢失和数据包超时的情况，可以快速恢复数据传输并避免网络拥塞。</p>
+<p>总的来说，TCP的拥塞窗口是TCP协议中的一个重要机制，用于控制数据的传输速率和避免网络拥塞，是TCP协议保证传输的可靠性和网络性能的重要机制之一。</p>
+<h2 id="TCP的拥塞窗口和滑动窗口的区别"><a href="#TCP的拥塞窗口和滑动窗口的区别" class="headerlink" title="TCP的拥塞窗口和滑动窗口的区别"></a>TCP的拥塞窗口和滑动窗口的区别</h2><p>TCP流量控制和拥塞控制是TCP协议中的两个重要机制，它们的作用不同，具体区别如下：</p>
+<ol>
+<li>流量控制</li>
+</ol>
+<p>TCP流量控制主要是为了防止接收方的缓存溢出，即当数据发送过快，接收方不能及时处理时，TCP会通过发送方的窗口大小进行调整，控制发送方的发送速率。</p>
+<ol>
+<li>拥塞控制</li>
+</ol>
+<p>TCP拥塞控制主要是为了防止网络拥塞，当网络负载过重时，TCP会通过拥塞窗口大小的调整来控制发送方的发送速率，避免因网络拥塞而导致的数据丢失或延迟。</p>
+<p>因此，TCP流量控制主要是为了防止接收方缓存溢出，而TCP拥塞控制主要是为了避免网络拥塞，两者的目的不同，但都是为了保证TCP数据的可靠传输。</p>
+<h2 id="TCP挥手为什么四次而不是三次"><a href="#TCP挥手为什么四次而不是三次" class="headerlink" title="TCP挥手为什么四次而不是三次"></a>TCP挥手为什么四次而不是三次</h2><p>TCP挥手需要四次握手，原因如下：</p>
+<ol>
+<li>第一次挥手：客户端发送FIN包，告诉服务器端它将不会再发送数据。</li>
+<li>第二次挥手：服务器端收到FIN包后，确认收到了客户端的请求，但它仍然可以向客户端发送数据，并且在发送完毕后关闭连接，因此需要先发送ACK包表示已经收到了客户端的请求。</li>
+<li>第三次挥手：当服务器端发送完最后一条数据后，它需要发出FIN包，告诉客户端它将关闭连接。</li>
+<li>第四次挥手：客户端收到FIN包后，发送ACK包确认收到，并告诉服务器端它也将关闭连接。</li>
+</ol>
+<p>因此，第四次挥手是必要的，用于客户端确认已收到服务器端的关闭请求后，也关闭连接，否则可能会导致服务器端一直处于半关闭状态，浪费资源。</p>
+<h2 id="TCP握手为什么是三次而不是两次"><a href="#TCP握手为什么是三次而不是两次" class="headerlink" title="TCP握手为什么是三次而不是两次"></a>TCP握手为什么是三次而不是两次</h2><p>TCP 建立连接时，通过三次握手能防止历史连接的建立，能减少双方不必要的资源开销，能帮助双方同步初始化序列。序列号能够保证数据包不重复、不丢弃和按序传输。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" class="category-chain-item">计算机网络</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/TCP/">#TCP</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>深入浅出系列-TCP</div>
+      <div>http://example.com/2023/03/07/深入浅出系列-TCP/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>BiggerBrain</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年3月7日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/03/15/%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA%E7%B3%BB%E5%88%97-Top%E5%91%BD%E4%BB%A4/" title="深入浅出系列-Top命令">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">深入浅出系列-Top命令</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/03/07/%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA%E7%B3%BB%E5%88%97-%E5%A6%82%E4%BD%95%E8%AE%BE%E8%AE%A1%E9%AB%98%E5%B9%B6%E5%8F%91%E6%9E%B6%E6%9E%84/" title="深入浅出系列-如何设计高并发架构">
+                        <span class="hidden-mobile">深入浅出系列-如何设计高并发架构</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

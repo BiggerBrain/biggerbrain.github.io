@@ -1,0 +1,763 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="BiggerBrain">
+  <meta name="keywords" content="互联网，计算机，生活">
+  
+    <meta name="description" content="序言​	VLDB，即（International Conference on Very Large Data Bases，大规模数据库国际会议，简称VLDB），是世界顶级的数据库学术会议之一。每年的VLDB都会聚集全球顶尖的数据库技术专家和创新者，分享他们的研究成果和实践经验。在今年的VLDB2023大会上，工业界的最佳论文《Kora: A Cloud-Native Event Streaming">
+<meta property="og:type" content="article">
+<meta property="og:title" content="揭秘Kora:Kafka的云原生事件流处理平台">
+<meta property="og:url" content="http://example.com/2024/03/08/%E6%8F%AD%E7%A7%98Kora:Kafka%E7%9A%84%E4%BA%91%E5%8E%9F%E7%94%9F%E4%BA%8B%E4%BB%B6%E6%B5%81%E5%A4%84%E7%90%86%E5%B9%B3%E5%8F%B0/index.html">
+<meta property="og:site_name" content="李世雄的技术博客">
+<meta property="og:description" content="序言​	VLDB，即（International Conference on Very Large Data Bases，大规模数据库国际会议，简称VLDB），是世界顶级的数据库学术会议之一。每年的VLDB都会聚集全球顶尖的数据库技术专家和创新者，分享他们的研究成果和实践经验。在今年的VLDB2023大会上，工业界的最佳论文《Kora: A Cloud-Native Event Streaming">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/kafka.png">
+<meta property="article:published_time" content="2024-03-08T14:08:00.000Z">
+<meta property="article:modified_time" content="2024-03-11T05:14:49.763Z">
+<meta property="article:author" content="李世雄">
+<meta property="article:tag" content="kafka">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://example.com/images/kafka.png">
+  
+  
+  
+  <title>揭秘Kora:Kafka的云原生事件流处理平台 - 李世雄的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.3","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>BiggerBrain</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="揭秘Kora:Kafka的云原生事件流处理平台"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-03-08 22:08" pubdate>
+          2024年3月8日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          7.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          66 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">揭秘Kora:Kafka的云原生事件流处理平台</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="序言"><a href="#序言" class="headerlink" title="序言"></a>序言</h1><p>​	VLDB，即（<strong>International Conference on Very Large Data Bases，大规模数据库国际会议，简称VLDB</strong>），是世界顶级的数据库学术会议之一。每年的VLDB都会聚集全球顶尖的数据库技术专家和创新者，分享他们的研究成果和实践经验。在今年的VLDB2023大会上，工业界的最佳论文《Kora: A Cloud-Native Event Streaming Platform For Kafka》荣获殊荣，其详述了Confluent公司基于Kafka设计的云原生事件流平台Kora的实现原理。作为一名专注于Kafka云原生内核技术和生态技术的开发者，一直关注着Kafka和Confluent等行业领先公司的动态。此奖项的颁发，再次证明Kafka在事件流处理领域的价值和竞争力。尽管科技日新月异，新技术层出不穷，然而Kafka和Confluent这样的经典技术还依然保持着竞争力和应用价值，实在令人欣慰。</p>
+<p>​	在讲Kora之前，让我们来了解一下Kora及Kafka和Confluent的发展历史。</p>
+<p>​	Kafka作为主要的事件队列和中间件，对许多互联网开发者来说并不陌生。然而，Kafka并非简单的消息队列，而是分布式事件流处理领域的佼佼者。它与传统消息中间件不同，一直聚焦在大数据、实时处理以及数据流领域。由于Kafka的出色表现，技术生态上逐渐诞生了Kafka core（事件流队列&#x2F;消息队列），Kafka Stream（事件流流式处理和分析），Kafka Connect（数据生态连接，连接上下游数据系统）等丰富的技术产品。</p>
+<p>​	互联网的飞速发展使得数据规模呈指数级增长，数据的重要性日益显著。无论是数据报表还是数据分析，亦或是机器学习和人工智能，都需要快速、准确的数据处理。这为流数据处理领域提供了巨大的市场和技术机遇。因此，Kafka的创始团队成立了以Kafka为核心的商业化技术公司——Confluent，并成功上市。截至撰写本文2024年3月，Confluent的市值高达104亿美元，这无疑是基础架构领域非ToC领域的成功案例。</p>
+<p>​	随着云计算的发展和普及，<strong>【云原生】</strong>概念的深入人心，从严格定义上，Kafka 最初是在非云原生世界中构建的，这使得它无法以经济有效且高效弹性的方式直接在当今云上的基础设施中使用，因此遭遇了诸多其他基于云原生设计的消息产品的技术挑战。</p>
+<p>​	针对Kafka的云原生化，在国内，各大云厂商诸如阿里云，腾讯云，字节等也在跟进推出自己的云原生化的事件流解决方案，其核心竞争力始终围绕<strong>【弹性】</strong>、<strong>【性能】</strong>和<strong>【成本】</strong>建设，有Alikafka，Ckafka，BMQ等产品；在创业领域，也诞生了一系列创业公司，如基于pulsar作为技术底座的<strong>StreamNative</strong>，其核心特征是计算与存储分离架构，带来的收益是【弹性】能力的极大提升；如100%兼容Kafka协议的<strong>AutoMQ</strong>，其核心竞争力目前也是存算分离架构提供极致的降本和极高的弹性。</p>
+<p>​	Confluent作为Kafka创始人孵化的创业团队，这个领域耕耘了十多年，对开源Kafka这些问题和痛点有意而为之，其本质原因是基于Kafka的云原生化存在十分重要的商业价值，既要在开源上处于领先地位，又需要在某些重要特性和功能上在商业化和开源上做出差异化，吸引客户付费使用，因此，在一些关键的特性上，开源是落后于商业化的。Kora的设计实现则首次披露了Confluent如何基于Kafka设计云原生事件流平台，可以打个比方，Kora，其对标的是国内各大云厂商诸如阿里云的Alikafka，腾讯云的Ckafka，华为云的Kafka等诸多大厂的云平台的设计实现。</p>
+<p>​	在云原生下，大规模运行 Kafka 面临着非常多的技术挑战，很欣慰能看到Kora的设计实现，笔者结合多年云计算流处理消息相关开发实践经验，发现其很多设计与国内各大云厂商不谋而合，但也有一些独到的实践值得借鉴和学习，笔者将在本文重点研究 Kora 提供的核心设计以及它使用哪些技术来构建大规模的云原生解决方案。</p>
+<blockquote>
+<p>论文：<a target="_blank" rel="noopener" href="https://www.vldb.org/pvldb/vol16/p3822-povzner.pdf">https://www.vldb.org/pvldb/vol16/p3822-povzner.pdf</a></p>
+</blockquote>
+<h2 id="1-事件流"><a href="#1-事件流" class="headerlink" title="1 事件流"></a>1 事件流</h2><p>​	在介绍Kora之前，先介绍<strong>事件流</strong>。事件流解决的是事件从生产到消费如何实时处理的问题，事件如流水一样持续不断的产生，相应的系统需要具备实时的处理能力。图1显示Kafka事件流系统的模型视图。Kafka在中间，生产者将数据写入日志的末尾，而消费者可以从任意偏移量中读取数据。事件由生产者写入Kafka之后，消费者可以通过Kafka的消费订阅，高扇出地即时地读取数据，可以这么理解，Kafka是大数据里面的<strong>高速公路</strong>。目前，Confluent收购了Flink初创团队创建的Immerok，数据的流式计算，流式存储和处理，流式传输正变得越来越紧密。</p>
+<p><img src="/../images/image-20240311110641020.png" srcset="/img/loading.gif" lazyload></p>
+<center><p>事件流模型</p></center>
+
+<h2 id="2-顶层设计"><a href="#2-顶层设计" class="headerlink" title="2 顶层设计"></a>2 顶层设计</h2><p>​	Kora是云原生的事件流平台，云原生的Kora具备何种特性呢？Kora给出的答案是：除了开源Kafka具备的基本的高可用性，持久性和可扩展性外，还提供<strong>【弹性】</strong>、<strong>【成本效率】</strong>、<strong>【性能】</strong>、<strong>【多租户】</strong>和<strong>【跨云同步】</strong>等差异化能力。因此，Kora的设计存在两个层面的设计，一方面是有别开源Kafka的架构设计，另一方面是云原生方案的设计。</p>
+<blockquote>
+<ol>
+<li>在Kafka的架构设计上，采用存算分离架构设计，元数据层面基于Raft协议实现分布式环境下的自我管理。这两个设计有效促进了Kafka的【弹性】、【性能】和【成本效率】的提升。</li>
+<li>在云原生设计上，提供了最核心对资源的抽象设计-Confluent Kafka Units（简称CKU），CKU是【弹性】、【成本效率】、【性能】、【多租户】和【跨云同步】等核心云原生能力的基石。CKU解决的是在跨云和跨云下不同的硬件中提供一致的性能体验。Confluent Cloud与国内云厂商不同的点之一是横跨三种云(AWS、GCP、Azure)和73个地区的数万个集群，如何远离底层硬件，在追求最佳性价比的过程中试验更新的硬件类型和配置，提供一致的性能和体验是非常具有挑战的。虽然更新、更快的硬件在不断满足客户日益增长的性能需求，但现实是，如果要评估新硬件适配多样化的工作负载需求，想获得最佳性价比，需要大量的测试和投入。</li>
+</ol>
+</blockquote>
+<h2 id="3-架构设计"><a href="#3-架构设计" class="headerlink" title="3 架构设计"></a>3 架构设计</h2><p>​	本节介绍Kora的设计目标和架构设计。</p>
+<h3 id="3-1-设计目标"><a href="#3-1-设计目标" class="headerlink" title="3.1 设计目标"></a>3.1 设计目标</h3><ul>
+<li><p>可用性：单AZ提供99.95%的可用性，多AZ提供99.99%的可用性。</p>
+</li>
+<li><p>弹性：支持用户对集群规模的扩容和缩容，此外，Kora还提供自适应工作负载模式的变化，给集群大小提供最佳性能。</p>
+</li>
+<li><p>性能：高吞吐，低延迟，除了软件层面的优化，针对硬件资源，随着硬件资源的推陈出新，Kora会有意识地更新硬件资源，因此，随着时间的推移，用户可能会看到他们的应用程序的性能提升。</p>
+</li>
+<li><p>多租户：支持多租，尽可能降低客户成本。</p>
+</li>
+<li><p>多云支持：Kora运行在AWS、GCP和Azure上，最小化屏蔽云之间的资源差异，在服务交付上给用户提供统一的体验。</p>
+</li>
+</ul>
+<h3 id="3-2-架构设计"><a href="#3-2-架构设计" class="headerlink" title="3.2 架构设计"></a>3.2 架构设计</h3><p><img src="/../images/image-20240311130734612.png" srcset="/img/loading.gif" lazyload></p>
+<center><p>Confluent Cloud中的控制面和数据面</p></center>
+
+<p>​	<strong>控制面和数据面解耦设计</strong>：如图2所示，分为集中式的控制面和分布式的数据平面。</p>
+<p>​	<strong>控制面承担资源管理的角色</strong>：控制面使用Kubernetes分配物理资源(包括计算、存储、网络等)以及初始化集群，在跨可用区场景中，集群会均匀分布在不同的可用区。</p>
+<p>​	<strong>数据面承担数据处理的角色</strong>：数据面由独立的物理Kafka集群( <strong>physical Kafka clusters，物理Kafka集群，简称PKC</strong>)组成和管控相关的微服务所构成。一个PKC托管一个或多个LKC（<strong>logical Kafka cluster，逻辑Kafka集群，简称LKC</strong>）。事件的生产和消费通过网络层流入和流出数据面。</p>
+<blockquote>
+<p>这里值得借鉴的是：数据面的网络层使用<strong>Proxy</strong>，通过SNI(服务器名称标识)路由到各个Broker。Proxy是无状态的，独立扩展，因此，可以支持大型集群且不会遇到端口耗尽等瓶颈。<strong>在多租场景，笔者就遇到过端口不足的问题</strong>。</p>
+</blockquote>
+<p>​	控制面和数据面解耦在云计算或者基础架构领域可以说是比较常见的设计，Kora在生产环境上使用了两个比较重要的Kafka特性：第一，元数据自管理；第二，分层存储。</p>
+<h3 id="3-3-元数据管理"><a href="#3-3-元数据管理" class="headerlink" title="3.3 元数据管理"></a>3.3 元数据管理</h3><p>​	在分布式系统中，如何协调分布在不同机器的服务，实现一致性的数据管理在分布式领域一直都是核心问题。一般在分布式系统设计中，都会避免自己设计一致性协议，而采用传统的ZooKeeper进行分布式协调和管理元数据。Kafka在2.8之前就一直依赖ZooKeeper进行集中式地管理元数据，在2.8开始推出基于Raft协议的元数据自我管理，简称Kraft，在Kafka 3.6版本则标志生产可用，截止当下，Kafka最新版本是3.7，在未来的4.0会彻底去除ZooKeeper的依赖。</p>
+<blockquote>
+<p>为什么Kora要自己做元数据管理？</p>
+<p>这是Kafka在技术演进上重要的一次升级。ZooKeeper是强一致性系统，因此性能不高，在百万分区下，会涉及大量的元数据同步和管理，基于ZooKeeper的元数据管理非常容易遇到性能问题，同时去ZK，会减少一个额外组件的运维，有利于系统的自我管理能力的进一步提升，因为Kafka比ZooKeeper更懂Kafka。这里额外对比一下Pulsar，Pulsar一直在挑战Kafka的地位，但是Pulsar存在一个问题，那就是部署和运维的组件较多，较复杂。好的技术产品，是需要将复杂问题闭环，对外部呈现最简单，最符合直觉的服务。</p>
+</blockquote>
+<p>​	在元数自我管理方面，Kora有一个实践值得借鉴：那就是，元数据管理的节点独立部署，<strong>只承担元数据管理的角色</strong>，独立部署在<strong>滚动升级场景</strong>，会减少选举带来的不稳定性，在大规模部署Kafka场景下，这不失为是一种好的实践。</p>
+<h3 id="3-4-分层存储"><a href="#3-4-分层存储" class="headerlink" title="3.4 分层存储"></a>3.4 分层存储</h3><p>​	在2018时候，分层存储设计在Kafka开源领域的设计就提出来了，即<a target="_blank" rel="noopener" href="https://cwiki.apache.org/confluence/display/KAFKA/KIP-405%3A+Kafka+Tiered+Storage">KIP-405</a>，Kafka目前的存储和计算是在同一台机器上的，随着数据大小的增加，这种架构最终会成为瓶颈。目前3.6版本Kafka推出了分层存储，但是不建议生产可用，3.6的分层更接近是定义了使用的标准和协议，也就是一个框架，底层如何存储和处理数据还是需要开发者自己实现。</p>
+<blockquote>
+<p>为什么时间这么久，<strong>完整的分层存储</strong>没有开源？</p>
+<ol>
+<li>因为分层存储存在极大的商业价值，并非技术不可行，这是商业化和开源的区别，Kora在云上大规模使用了分层存储技术，该技术能提供无限存储，在大量数据，长时间的数据存储场景中，能极大降低客户成本。</li>
+<li>在冷热数据中，冷数据的存储对接的可能是不同的系统，如亚马逊的S3，如HDFS，不同存储系统的存储的读写API都不一样，因此定义标准和协议更为现实。</li>
+</ol>
+</blockquote>
+<p>​	分层存储同时带来了一个非常好的优势，那就是<strong>【弹性】</strong>的极大提升。传统Kafka很难称为云原生，传统Kafka在扩缩容方面，涉及大量的数据迁移，因此Kafka的弹性效率不高。分层存储之后，只有少量热数据保留本地，因此在弹缩方面设计的数据迁移就很少，因此Kora在弹缩能力上比传统Kafka高很多，这个技术也是构建Kora云原生的核心基石。</p>
+<h2 id="4-云原生的设计"><a href="#4-云原生的设计" class="headerlink" title="4 云原生的设计"></a>4 云原生的设计</h2><p>在本节中，我们将讨论如何设计Kora的云原生属性，本节中描述的构建模块也构成了我们多租户服务的基础。</p>
+<blockquote>
+<p>这节，我们能近距离明白具备什么特性才能成为云原生。Kora给出的答案是：资源模型与抽象、集群组织、弹性、可观测能力、自动迁移、数据容灾以及升级。</p>
+</blockquote>
+<h3 id="4-1-资源模型"><a href="#4-1-资源模型" class="headerlink" title="4.1 资源模型"></a>4.1 资源模型</h3><p>​	<strong>资源模型</strong>：资源模型对提供真正的云原生体验非常重要，因为用户不必考虑云的底层细节，如CPU、内存、网络、IOPS&#x2F;吞吐量&#x2F;存储带宽等。Kora定义CKU（Confluent Kafka Units，Confluent的Kafka资源使用单位，简称CKU），CKU可以简单理解就是我们测距的米，测重的千克，测面积的平米等单位，一个CKU代表了客户能使用多少带宽&#x2F;请求速率&#x2F;网络连接总数&#x2F;建连速度。</p>
+<blockquote>
+<p>在定义了CKU后，在云上Kora的服务的提供都以CKU作为单位，但是呢？CKU是一种理想的设定，需要标准的使用方式才能使用好CKU，尤其是在云上，笔者对此感触颇深，云上的客户在使用方式千奇百怪，技术能力可能也参差不齐，往往存在诸多不佳实践，很难达到CKU的使用上限。因此Kora定义了集群负载的概念，用以衡量集群的负载。</p>
+</blockquote>
+<p>​	<strong>集群负载</strong>：集群负载存在最大的挑战是：直接使用CPU、IOPS&#x2F;磁盘吞吐量或网络带宽不足并不科学，也不准确，在CPU很高时候，可能客户的延时并不大，可能客户运行的服务非常稳定，因此Kora使用<em><strong>Kingman公式的排队论定律</strong></em>来研究延迟和服务器利用率之间的关系。</p>
+<blockquote>
+<p>Confluent 基于<em><strong>Kingman公式的排队论定律</strong></em>，参数采用时延，系数则是通过大量的测试得出，因为不同云之间的资源性能不一致，因此每种云的系统都不一样。集群负载实施会较为复杂，因为需要大量测试确定系数，Kora对三种云的不同资源硬件进行了大量实验，在CPU密集型场景中，证明Kingman的排队定律计算的负载参数非常有效，在低CPU的场景下，Kora则会使用带宽利用率提供集群负载指标</p>
+</blockquote>
+<h3 id="4-2-集群组织"><a href="#4-2-集群组织" class="headerlink" title="4.2 集群组织"></a>4.2 集群组织</h3><p>​	集群组织方面，Kora的设计和国内的思路设计基本一致，Kafka集群需要的各种微服务来实现可观察性、审计、计费等功能，这些功能Kora没有为这些服务提供专用资源，而是将它们与Kafka代理捆绑在一起，同时保留大约80%的VM资源供Kafka代理使用。</p>
+<h3 id="4-3-弹性"><a href="#4-3-弹性" class="headerlink" title="4.3 弹性"></a>4.3 弹性</h3><p>​	弹性：前面Kora定义了CKU作为资源的单位，Kora的弹性，即能根据工作负载不断变化，以CKU作为粒度增加或者减少资源，弹性是云原生核心特征也是技术竞争力，其中Kora的弹性设计主要如下核心点：</p>
+<pre><code class="hljs">1. **自适应的数据均衡**：Kora改造了Kafka的Controller组件，增加了收集集群中每个Kafka代理的指标，集中式地实时掌握集群负载情况，并通过基于简单的启发式重新分配副本，因此实现自我数据平衡的能力。
+1. 元数据管理是基于Kraft协议独立部署和运行的，因此弹缩期间的选举造成的稳定性影响减少。
+1. 数据采用分层存储，因此资源弹缩过程（增加节点或者减少节点）迁移数据的量很少，弹缩性能提升很大。
+</code></pre>
+<h3 id="4-4-可观测性"><a href="#4-4-可观测性" class="headerlink" title="4.4 可观测性"></a>4.4 可观测性</h3><p>​	可观测性对于运行一个大型分布式系统至关重要，开源kafka提供了丰富的可观测指标，商业化提供更多的观测指标不足为奇，其中笔者认为Kora较为突出的设计是：</p>
+<p>​	<strong>端到端延时的设计</strong>：在传统情况下，我们可以很精确的了解服务端Broker的各种延迟指标和物理资源使用情况，但是事件诞生到Broker，Broker到消费者，这两个观测指标是游离分布式系统之外的。如何探测端到端的延迟，是一个非常有意义的挑战。为了弥补这一差距，Kora在每个集群中包括一个健康检查代理，该代理位于内部网络之外，并通过产生和消费请求不断探测端到端的延迟，以检测可用性或性能方面是否有损失。</p>
+<h3 id="4-5-自动迁移"><a href="#4-5-自动迁移" class="headerlink" title="4.5 自动迁移"></a>4.5 自动迁移</h3><p>​	由Kora支持的Confluent Cloud为多区域集群提供99.99%的正常运行时间SLA。因为Kora是在多云下提供服务，当底层不同的云厂商不都提供相同的SLA保证时，维护4个9的可用性具有挑战性，事实上，Confluent的数据披露大部分可用性失效是由云基础设施故障引起的，Kora针对这块的设计是：</p>
+<p>​	<strong>健康巡检</strong>：每个代理运行一个健康巡检线程，认为代理不健康会自动迁移，在传统情况，自动迁移如果涉及大量数据回来<strong>迁移风暴</strong>，但是依然得益于分层存储的设计，Kora的自动迁移效率很高。</p>
+<h3 id="4-6-数据容灾"><a href="#4-6-数据容灾" class="headerlink" title="4.6 数据容灾"></a>4.6 数据容灾</h3><p>​	在数据容灾方面，Kora有一个优秀的设计实践：<strong>镜像复制</strong>，Kora提供CLuster Link能力，比开源的mirrormaker2更强，允许在两个独立的Kafka集群之间以无缝的方式复制所有数据和所有元数据（<strong>包括不需要映射的消费位点</strong>）状态，因此，在源集群故障时候，只需将客户端指向新的集群端点即可。</p>
+<h3 id="4-7-升级"><a href="#4-7-升级" class="headerlink" title="4.7 升级"></a>4.7 升级</h3><p>​	<strong>升级</strong>：升级对核心服务的持续改进和创新至关重要，但是在大规模事件流处理过程，如何安全地尽可能降低抖动地升级是一个非常大的挑战也是持续打磨的过程。目前Kora的升级思路如下</p>
+<pre><code class="hljs">1. 滚动升级，小集群只滚动一个，大集群滚动会多个，滚动下一组的过程会根据一系列内部健康指标是否达标在进行下一轮滚动。
+1. 跨可用区实例确保所有副本不会在同一个可用区，减少滚动的影响。
+</code></pre>
+<h2 id="5-多租户设计"><a href="#5-多租户设计" class="headerlink" title="5 多租户设计"></a>5 多租户设计</h2><p>​	多租户能在大规模场景下，提供真正的云原生体验:更高层次的资源抽象、弹性和随用随付模型以及<strong>更低的成本</strong>，但是多租户的设计是非常具有挑战的，尤其是云上面对的客户来自各行各业，其中<strong>资源隔离</strong>是最核心的技术挑战，因为隔离如果没有做到位的话，很容易互相影响，造成故障。</p>
+<h3 id="5-1-逻辑集群"><a href="#5-1-逻辑集群" class="headerlink" title="5.1 逻辑集群"></a>5.1 逻辑集群</h3><p>​	<strong>命名空间隔离</strong>，设计了逻辑Kafka的概念，LKC的数据隔离是通过身份验证(通过API密钥)、授权和加密实现的。Kafka本身不支持命名空间隔离。Kora通过使用相应的逻辑集群ID(每个LKC的唯一标识符)标志每个集群资源(主题、消费者组、acl等)使用。</p>
+<p><img src="/../images/image-20240311110318469.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="/../images/image-20240311110318469.png" srcset="/img/loading.gif" lazyload></p>
+<center><p>逻辑集群ID命名空间隔离</p></center>
+
+<center><p></p></center>
+
+<h3 id="5-2-性能隔离"><a href="#5-2-性能隔离" class="headerlink" title="5.2 性能隔离"></a>5.2 性能隔离</h3><p>​	<strong>资源隔离设计</strong>：Kora实施租户级配额来实现性能隔离，隔离的资源分别如下:</p>
+<blockquote>
+<ol>
+<li>入口和出口带宽：通过配额机制实现，当触发带宽额度后，会对客户连接进行静默处理。</li>
+<li>CPU使用：对请求和请求处理时间进行限制，当请求处理时间大于限定值会静默处理。</li>
+<li>网络连接数量：限定网络连接数量，超过一定的连接数会报错。</li>
+<li>连接尝试率：限定网络重连的时间间隔，超过限度会报错。</li>
+<li>内存：影响内存使用的工作负载行为配额。分区数创建&#x2F;删除配额：业务上限定分区数的总数。</li>
+</ol>
+</blockquote>
+<p>​	<strong>分布式配额设计</strong>：在随用随付模式下，由于大多数租户使用的带宽远远低于其逻辑集群的最大带宽容量，但是多租户下，不同租户的峰值时间不一，负载分布在不同的节点，不同时刻，不同节点的负载也不一样，如何有效利用集群资源提供更好的服务，Kora通过使用动态配额机制来解决这个问题。该机制根据租户的带宽消耗来调整带宽分配。这是通过使用共享配额服务来管理配额分配来实现的，这种设计如下：</p>
+<blockquote>
+<ol>
+<li>定义节点的最大物理带宽额度</li>
+<li>提供配<strong>额协调器</strong>用于分布式节点流量的收集和处理</li>
+<li>节点定期向配额协调器上报每个租户和每个Broker的带宽使用数据和相关的限额信息</li>
+<li><strong>配额协调器</strong>汇总这些数据，重新计算每个代理-租户对的还能使用多少额度，并以将可使用的额度分发给相关节点</li>
+<li>为了适应大型多租户环境，部署了多个<strong>配额协调器</strong>，Broker通过哈希将每个配额实体映射到一个<strong>配额协调器</strong></li>
+</ol>
+</blockquote>
+<p><img src="/../images/image-20240311130443738.png" srcset="/img/loading.gif" lazyload></p>
+<center><p>配额协调器设计</p></center>
+
+<h2 id="6-总结"><a href="#6-总结" class="headerlink" title="6 总结"></a>6 总结</h2><p>​	当下，互联网技术在不断发展，回顾过去，短短几年，从移动化，大数据，云计算，区块链到现在的人工智能，世界的发展日新月异。而这些技术的背后也催生了大量的数据，数据的价值被证明意义非凡，和水、电、燃气一样无处不在，而实时数据的处理需求，让事件流系统也成为越来越重要的基础设施，Kafka目前是事件流的领导者，Confluent也在不断的往事件流的流处理和流计算发展，Kora在某种程度上也代表了这个技术的前沿，VLDB 2023这篇工业界的Best Paper披露了很多好的设计和实践，非常值得我们借鉴。技术在不断发展，新的前沿的知识需要终身我们不断持续学习，百尺竿头，更进一步。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" class="category-chain-item">分布式</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/kafka/">#kafka</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>揭秘Kora:Kafka的云原生事件流处理平台</div>
+      <div>http://example.com/2024/03/08/揭秘Kora:Kafka的云原生事件流处理平台/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>BiggerBrain</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年3月8日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/02/27/%E5%A5%BD%E7%BD%91%E5%AF%BC%E8%88%AA/" title="好网导航">
+                        <span class="hidden-mobile">好网导航</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
